@@ -28,6 +28,9 @@ struct ContentView: View {
             Button {
                 if let currentNumber {
                     history.append(currentNumber)
+                    if history.count > 5 {
+                        history.removeFirst()
+                    }
                 }
                 withAnimation {
                     currentNumber = Int.random(in: 1...6)
