@@ -71,7 +71,7 @@ final class PomodoroModel {
         timerTask?.cancel()
         timerTask = Task {
             while !Task.isCancelled && isRunning {
-                try? await Task.sleep(for: .seconds(1))
+                try? await Task.sleep(for: .milliseconds(500))
                 guard !Task.isCancelled && isRunning else { break }
                 ringColor = Color(
                     hue: Double.random(in: 0...1),
@@ -79,13 +79,16 @@ final class PomodoroModel {
                     brightness: Double.random(in: 0.6...1.0)
                 )
                 tickCount += 1
-                if tickCount % 5 == 0 {
+                if tickCount % 10 == 0 {
                     playRandomSound()
                 }
-                if remainingSeconds > 0 {
-                    remainingSeconds -= 1
-                } else {
-                    advancePhase()
+                // 2tickで1秒
+                if tickCount % 2 == 0 {
+                    if remainingSeconds > 0 {
+                        remainingSeconds -= 1
+                    } else {
+                        advancePhase()
+                    }
                 }
             }
         }
