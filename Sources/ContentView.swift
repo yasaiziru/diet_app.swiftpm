@@ -71,7 +71,7 @@ final class PomodoroModel {
         timerTask?.cancel()
         timerTask = Task {
             while !Task.isCancelled && isRunning {
-                try? await Task.sleep(for: .milliseconds(500))
+                try? await Task.sleep(for: .milliseconds(100))
                 guard !Task.isCancelled && isRunning else { break }
                 ringColor = Color(
                     hue: Double.random(in: 0...1),
@@ -80,8 +80,8 @@ final class PomodoroModel {
                 )
                 tickCount += 1
                 playRandomSound()
-                // 2tickで1秒
-                if tickCount % 2 == 0 {
+                // 10tickで1秒
+                if tickCount % 10 == 0 {
                     if remainingSeconds > 0 {
                         remainingSeconds -= 1
                     } else {
@@ -94,7 +94,7 @@ final class PomodoroModel {
 
     private func playRandomSound() {
         let freq = Self.toneFrequencies.randomElement() ?? 440.0
-        guard let data = generateToneData(frequency: freq, duration: 0.3) else { return }
+        guard let data = generateToneData(frequency: freq, duration: 0.08) else { return }
         audioPlayer = try? AVAudioPlayer(data: data)
         audioPlayer?.play()
     }
