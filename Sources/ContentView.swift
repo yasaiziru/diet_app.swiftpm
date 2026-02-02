@@ -1,4 +1,5 @@
 import SwiftUI
+import AudioToolbox
 
 // MARK: - Model
 
@@ -21,6 +22,13 @@ final class PomodoroModel {
     var ringColor = Color.orange
 
     private var timerTask: Task<Void, Never>?
+    private var tickCount = 0
+
+    // システムサウンドID一覧（ランダムで選択）
+    private let soundIDs: [SystemSoundID] = [
+        1013, 1014, 1016, 1025, 1026, 1027, 1029,
+        1030, 1031, 1032, 1033, 1034, 1035, 1036
+    ]
 
     var elapsed: TimeInterval { phase.duration - remainingSeconds }
     var progress: Double { elapsed / phase.duration }
@@ -45,6 +53,7 @@ final class PomodoroModel {
         phase = .work
         remainingSeconds = phase.duration
         isRunning = true
+        tickCount = 0
         startTimer()
     }
 
@@ -68,12 +77,22 @@ final class PomodoroModel {
                     saturation: Double.random(in: 0.5...1.0),
                     brightness: Double.random(in: 0.6...1.0)
                 )
+                tickCount += 1
+                if tickCount % 300 == 0 {
+                    playRandomSound()
+                }
                 if remainingSeconds > 0 {
                     remainingSeconds -= 1
                 } else {
                     advancePhase()
                 }
             }
+        }
+    }
+
+    private func playRandomSound() {
+        if let id = soundIDs.randomElement() {
+            AudioServicesPlaySystemSound(id)
         }
     }
 
