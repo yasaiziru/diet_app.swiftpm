@@ -78,7 +78,7 @@ final class PomodoroModel {
                     brightness: Double.random(in: 0.6...1.0)
                 )
                 tickCount += 1
-                if tickCount % 300 == 0 {
+                if tickCount % 5 == 0 {
                     playRandomSound()
                 }
                 if remainingSeconds > 0 {
