@@ -18,6 +18,7 @@ final class PomodoroModel {
     var phase: TimerPhase = .work
     var remainingSeconds: TimeInterval = 25 * 60
     var isRunning = false
+    var ringColor = Color.orange
 
     private var timerTask: Task<Void, Never>?
 
@@ -62,6 +63,11 @@ final class PomodoroModel {
             while !Task.isCancelled && isRunning {
                 try? await Task.sleep(for: .seconds(1))
                 guard !Task.isCancelled && isRunning else { break }
+                ringColor = Color(
+                    hue: Double.random(in: 0...1),
+                    saturation: Double.random(in: 0.5...1.0),
+                    brightness: Double.random(in: 0.6...1.0)
+                )
                 if remainingSeconds > 0 {
                     remainingSeconds -= 1
                 } else {
@@ -130,7 +136,7 @@ struct ContentView: View {
                 // 内側: 現在フェーズ進捗
                 DonutProgressView(
                     progress: model.progress,
-                    color: model.phase.color
+                    color: model.ringColor
                 )
                 .padding(32)
 
@@ -139,7 +145,7 @@ struct ContentView: View {
                     if model.isRunning {
                         Text(model.phase.label)
                             .font(.headline)
-                            .foregroundStyle(model.phase.color)
+                            .foregroundStyle(model.ringColor)
 
                         Text(String(format: "%02d:%02d", model.minutesDisplay, model.secondsDisplay))
                             .font(.system(size: 52, weight: .bold, design: .rounded))
