@@ -11,7 +11,7 @@ enum TimerPhase: Equatable {
     var color: Color { self == .work ? .orange : .teal }
 }
 
-@Observable
+@MainActor @Observable
 final class PomodoroModel {
     var totalSessions = 1
     var currentSession = 1
