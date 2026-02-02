@@ -19,7 +19,7 @@ final class PomodoroModel {
     var remainingSeconds: TimeInterval = 25 * 60
     var isRunning = false
 
-    private var timer: Timer?
+    private var timerTask: Task<Void, Never>?
 
     var elapsed: TimeInterval { phase.duration - remainingSeconds }
     var progress: Double { elapsed / phase.duration }
@@ -48,33 +48,34 @@ final class PomodoroModel {
     }
 
     func stop() {
+        timerTask?.cancel()
+        timerTask = nil
         isRunning = false
-        timer?.invalidate()
-        timer = nil
         remainingSeconds = TimerPhase.work.duration
         phase = .work
         currentSession = 1
     }
 
     private func startTimer() {
-        timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            if self.remainingSeconds > 0 {
-                self.remainingSeconds -= 1
-            } else {
-                self.advancePhase()
+        timerTask?.cancel()
+        timerTask = Task {
+            while !Task.isCancelled && isRunning {
+                try? await Task.sleep(for: .seconds(1))
+                guard !Task.isCancelled && isRunning else { break }
+                if remainingSeconds > 0 {
+                    remainingSeconds -= 1
+                } else {
+                    advancePhase()
+                }
             }
         }
     }
 
     private func advancePhase() {
         if phase == .work {
-            // 作業 → 休憩
             phase = .rest
             remainingSeconds = phase.duration
         } else {
-            // 休憩 → 次のセッションまたは終了
             if currentSession < totalSessions {
                 currentSession += 1
                 phase = .work
