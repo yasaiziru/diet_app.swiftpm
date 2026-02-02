@@ -1,5 +1,5 @@
 import SwiftUI
-import AudioToolbox
+import AVFoundation
 
 // MARK: - Model
 
@@ -23,11 +23,12 @@ final class PomodoroModel {
 
     private var timerTask: Task<Void, Never>?
     private var tickCount = 0
+    private var audioPlayer: AVAudioPlayer?
 
-    // システムサウンドID一覧（ランダムで選択）
-    private let soundIDs: [SystemSoundID] = [
-        1013, 1014, 1016, 1025, 1026, 1027, 1029,
-        1030, 1031, 1032, 1033, 1034, 1035, 1036
+    // ランダムな周波数で正弦波トーンを生成
+    private static let toneFrequencies: [Double] = [
+        261.63, 293.66, 329.63, 349.23, 392.00, 440.00, 493.88, 523.25,
+        587.33, 659.25, 698.46, 783.99, 880.00, 987.77, 1046.50
     ]
 
     var elapsed: TimeInterval { phase.duration - remainingSeconds }
@@ -91,9 +92,48 @@ final class PomodoroModel {
     }
 
     private func playRandomSound() {
-        if let id = soundIDs.randomElement() {
-            AudioServicesPlaySystemSound(id)
+        let freq = Self.toneFrequencies.randomElement() ?? 440.0
+        guard let data = generateToneData(frequency: freq, duration: 0.3) else { return }
+        audioPlayer = try? AVAudioPlayer(data: data)
+        audioPlayer?.play()
+    }
+
+    private nonisolated func generateToneData(frequency: Double, duration: Double) -> Data? {
+        let sampleRate: Double = 44100
+        let sampleCount = Int(sampleRate * duration)
+        let amplitude: Double = 0.5
+
+        var header = Data()
+        let dataSize = UInt32(sampleCount * 2)
+        let fileSize = UInt32(36 + dataSize)
+
+        // RIFF header
+        header.append(contentsOf: [0x52, 0x49, 0x46, 0x46]) // "RIFF"
+        header.append(contentsOf: withUnsafeBytes(of: fileSize.littleEndian) { Array($0) })
+        header.append(contentsOf: [0x57, 0x41, 0x56, 0x45]) // "WAVE"
+        // fmt chunk
+        header.append(contentsOf: [0x66, 0x6D, 0x74, 0x20]) // "fmt "
+        header.append(contentsOf: withUnsafeBytes(of: UInt32(16).littleEndian) { Array($0) })
+        header.append(contentsOf: withUnsafeBytes(of: UInt16(1).littleEndian) { Array($0) })  // PCM
+        header.append(contentsOf: withUnsafeBytes(of: UInt16(1).littleEndian) { Array($0) })  // mono
+        header.append(contentsOf: withUnsafeBytes(of: UInt32(44100).littleEndian) { Array($0) })
+        header.append(contentsOf: withUnsafeBytes(of: UInt32(88200).littleEndian) { Array($0) })
+        header.append(contentsOf: withUnsafeBytes(of: UInt16(2).littleEndian) { Array($0) })  // block align
+        header.append(contentsOf: withUnsafeBytes(of: UInt16(16).littleEndian) { Array($0) }) // bits
+        // data chunk
+        header.append(contentsOf: [0x64, 0x61, 0x74, 0x61]) // "data"
+        header.append(contentsOf: withUnsafeBytes(of: dataSize.littleEndian) { Array($0) })
+
+        var samples = Data(capacity: Int(dataSize))
+        for i in 0..<sampleCount {
+            let t = Double(i) / sampleRate
+            // フェードアウトで自然な減衰
+            let envelope = max(0, 1.0 - t / duration)
+            let value = Int16(amplitude * envelope * sin(2.0 * .pi * frequency * t) * Double(Int16.max))
+            withUnsafeBytes(of: value.littleEndian) { samples.append(contentsOf: $0) }
         }
+
+        return header + samples
     }
 
     private func advancePhase() {
