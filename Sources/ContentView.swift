@@ -174,6 +174,116 @@ struct DonutProgressView: View {
     }
 }
 
+// MARK: - Dancing Schnauzer
+
+struct DancingSchnauzer: View {
+    @State private var bounce = false
+    @State private var tilt = false
+    @State private var step = false
+
+    var body: some View {
+        HStack(spacing: 0) {
+            // 左足
+            Text("🦶")
+                .font(.system(size: 10))
+                .offset(y: step ? 2 : -2)
+
+            VStack(spacing: 0) {
+                // 顔
+                ZStack {
+                    // 耳
+                    HStack(spacing: 14) {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(.gray)
+                            .frame(width: 6, height: 10)
+                            .rotationEffect(.degrees(-15))
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(.gray)
+                            .frame(width: 6, height: 10)
+                            .rotationEffect(.degrees(15))
+                    }
+                    .offset(y: -8)
+
+                    // 頭
+                    Ellipse()
+                        .fill(.gray.opacity(0.8))
+                        .frame(width: 24, height: 20)
+
+                    // 目
+                    HStack(spacing: 6) {
+                        Circle().fill(.black).frame(width: 3, height: 3)
+                        Circle().fill(.black).frame(width: 3, height: 3)
+                    }
+                    .offset(y: -2)
+
+                    // 眉毛（シュナウザーの特徴）
+                    HStack(spacing: 4) {
+                        Capsule().fill(.gray.opacity(0.6)).frame(width: 6, height: 2)
+                        Capsule().fill(.gray.opacity(0.6)).frame(width: 6, height: 2)
+                    }
+                    .offset(y: -5)
+
+                    // ヒゲ（シュナウザーの特徴）
+                    HStack(spacing: 8) {
+                        VStack(spacing: 1) {
+                            Capsule().fill(.gray.opacity(0.5)).frame(width: 10, height: 1)
+                            Capsule().fill(.gray.opacity(0.5)).frame(width: 8, height: 1)
+                        }
+                        VStack(spacing: 1) {
+                            Capsule().fill(.gray.opacity(0.5)).frame(width: 10, height: 1)
+                            Capsule().fill(.gray.opacity(0.5)).frame(width: 8, height: 1)
+                        }
+                    }
+                    .offset(y: 4)
+
+                    // 鼻
+                    Ellipse()
+                        .fill(.black)
+                        .frame(width: 5, height: 3)
+                        .offset(y: 2)
+                }
+
+                // 胴体
+                RoundedRectangle(cornerRadius: 8)
+                    .fill(.gray.opacity(0.7))
+                    .frame(width: 30, height: 22)
+
+                // 足
+                HStack(spacing: 10) {
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(.gray.opacity(0.9))
+                        .frame(width: 5, height: 12)
+                        .offset(y: step ? -2 : 2)
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(.gray.opacity(0.9))
+                        .frame(width: 5, height: 12)
+                        .offset(y: step ? 2 : -2)
+                }
+            }
+            .rotationEffect(.degrees(tilt ? -8 : 8))
+            .offset(y: bounce ? -6 : 0)
+
+            // しっぽ
+            Capsule()
+                .fill(.gray.opacity(0.8))
+                .frame(width: 4, height: 14)
+                .rotationEffect(.degrees(step ? -30 : 30), anchor: .bottom)
+                .offset(x: -2, y: -8)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 0.3).repeatForever(autoreverses: true)) {
+                bounce = true
+            }
+            withAnimation(.easeInOut(duration: 0.5).repeatForever(autoreverses: true)) {
+                tilt = true
+            }
+            withAnimation(.easeInOut(duration: 0.25).repeatForever(autoreverses: true)) {
+                step = true
+            }
+        }
+    }
+}
+
 // MARK: - Content View
 
 struct ContentView: View {
@@ -243,7 +353,9 @@ struct ContentView: View {
             .tint(model.isRunning ? .red : .accentColor)
             .controlSize(.large)
             .padding(.horizontal, 32)
-            .padding(.bottom, 32)
+
+            DancingSchnauzer()
+                .padding(.bottom, 24)
         }
         .confirmationDialog("セッション数を選択", isPresented: $showSessionPicker, titleVisibility: .visible) {
             ForEach(1...5, id: \.self) { count in
